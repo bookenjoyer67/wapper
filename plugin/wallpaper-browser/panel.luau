@@ -311,8 +311,15 @@ local function nsfwIndexFrom(level)
     return 1
 end
 
+-- `onDragEnd` delivers no value in this Noctalia build (procmon and yt-music
+-- both declare it with no parameter and read the state their onChange kept), so
+-- an empty/absent value means "keep the position onChange already reported" —
+-- never fall back to 1, which is silently "off".
 local function clampNsfw(value)
-    local n = tonumber(value) or 1
+    local n = tonumber(value)
+    if n == nil then
+        return nsfwIdx or 1
+    end
     if n < 1 then
         n = 1
     elseif n > 3 then
@@ -563,6 +570,10 @@ persistNsfw = function(level)
         if res ~= nil and res.exitCode == 0 then
             cfg = readSettings()
             nsfwIdx = nsfwIndexFrom(cfg.nsfw)
+            status = noctalia.tr("status.saved", { level = level })
+            -- reload the grid at the new purity: without this the visible results
+            -- stay at the old level until the query or sort is touched again
+            search(query, 1, true)
             status = noctalia.tr("status.saved", { level = level })
         else
             status = noctalia.tr("status.save_failed")
@@ -1007,9 +1018,9 @@ local function header()
                 nsfwIdx = clampNsfw(value)
                 render()
             end,
-            onDragEnd = function(value)
-                nsfwIdx = clampNsfw(value)
-                persistNsfw(NSFW_LEVELS[nsfwIdx])
+            onDragEnd = function()
+                -- no value here (see clampNsfw): persist the position onChange set
+                persistNsfw(NSFW_LEVELS[nsfwIdx or 1])
             end,
         }),
         ui.label({

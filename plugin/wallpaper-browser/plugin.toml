@@ -17,7 +17,7 @@
 # On the bar as: computing/wallpaper-browser:button
 id = "computing/wallpaper-browser"
 name = "Wallpaper Browser"
-version = "1.2.0"
+version = "1.2.1"
 plugin_api = 30
 author = "computing"
 license = "MIT"

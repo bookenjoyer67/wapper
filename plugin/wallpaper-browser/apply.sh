@@ -56,4 +56,20 @@ tail -n 1000 "$CACHE_DIR/history" > "$CACHE_DIR/history.tmp" 2>/dev/null \
 grep -qxF -- "$ID" "$CACHE_DIR/recent" 2>/dev/null || printf '%s\n' "$ID" >> "$CACHE_DIR/recent"
 tail -n 30 "$CACHE_DIR/recent" > "$CACHE_DIR/recent.tmp" 2>/dev/null && mv "$CACHE_DIR/recent.tmp" "$CACHE_DIR/recent"
 
-exec bash "${WALLPAPER_SCRIPTS:-$HOME/.local/bin}/apply-wallpaper.sh" "$dest"
+# The scripts live in the niri config dir (that is what config.kdl spawns);
+# ~/.local/bin is only a legacy fallback. WALLPAPER_SCRIPTS still wins.
+SCRIPTS_DIR="${WALLPAPER_SCRIPTS:-}"
+if [ -z "$SCRIPTS_DIR" ]; then
+    for candidate in "$HOME/.config/niri/scripts" "$HOME/.local/bin"; do
+        if [ -x "$candidate/apply-wallpaper.sh" ]; then
+            SCRIPTS_DIR="$candidate"
+            break
+        fi
+    done
+fi
+if [ -z "$SCRIPTS_DIR" ] || [ ! -x "$SCRIPTS_DIR/apply-wallpaper.sh" ]; then
+    echo "apply.sh: apply-wallpaper.sh not found (looked in \$WALLPAPER_SCRIPTS, $HOME/.config/niri/scripts, $HOME/.local/bin)" >&2
+    exit 127
+fi
+
+exec bash "$SCRIPTS_DIR/apply-wallpaper.sh" "$dest"

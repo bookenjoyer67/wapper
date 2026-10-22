@@ -1,8 +1,9 @@
 # Wallpaper Browser - a Noctalia panel to browse wallhaven.cc by hand instead
 # of pulling a random one.
 #
-# It speaks the same API the random fetcher does (wallhaven.cc/api/v1/search,
-# SFW only), but keeps the pool behaviour of fetch-wallpaper.sh out of the way:
+# It speaks the same API the random fetcher does (wallhaven.cc/api/v1/search),
+# with the purity and optional apikey from ~/.config/wallpaper/settings, but
+# keeps the pool behaviour of fetch-wallpaper.sh out of the way:
 # you get a thumbnail grid, a search box, sorting, paging, and one click to
 # apply. Applying runs the canonical pipeline via apply.sh -> apply-wallpaper.sh
 # (awww + matugen + Noctalia palette + lock backdrops), and updates the same
@@ -16,7 +17,7 @@
 # On the bar as: computing/wallpaper-browser:button
 id = "computing/wallpaper-browser"
 name = "Wallpaper Browser"
-version = "1.1.0"
+version = "1.2.0"
 plugin_api = 30
 author = "computing"
 license = "MIT"

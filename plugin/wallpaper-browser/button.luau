@@ -7,14 +7,25 @@
 --               (<WALLPAPER_SCRIPTS>/random-wallpaper.sh -> apply-wallpaper.sh),
 --               launched via niri so it gets the session env.
 --
--- The scripts are looked up in $WALLPAPER_SCRIPTS, then ~/.local/bin.
+-- The scripts live in $WALLPAPER_SCRIPTS, else the niri config dir that
+-- config.kdl actually spawns, else ~/.local/bin (legacy).
 
 local PANEL_ID = "computing/wallpaper-browser:browser"
 local GLYPH = "photo"
 
-local scriptsDir = (noctalia.getenv and noctalia.getenv("WALLPAPER_SCRIPTS"))
-    or (noctalia.expandPath and noctalia.expandPath("~/.local/bin"))
-    or ""
+local function resolveScriptsDir()
+    local env = noctalia.getenv and noctalia.getenv("WALLPAPER_SCRIPTS")
+    if type(env) == "string" and env ~= "" then
+        return env
+    end
+    for _, candidate in ipairs({ "~/.config/niri/scripts", "~/.local/bin" }) do
+        local dir = noctalia.expandPath and noctalia.expandPath(candidate) or ""
+        if dir ~= "" and noctalia.fileExists and noctalia.fileExists(dir .. "/random-wallpaper.sh") then
+            return dir
+        end
+    end
+    return ""
+end
 
 local function render()
     if barWidget == nil then
@@ -32,6 +43,14 @@ function onClick()
 end
 
 function onRightClick()
+    local scriptsDir = resolveScriptsDir()
+    if scriptsDir == "" then
+        noctalia.notifyError(
+            noctalia.tr("notify.failed_title"),
+            "random-wallpaper.sh not found (looked in $WALLPAPER_SCRIPTS, ~/.config/niri/scripts, ~/.local/bin)"
+        )
+        return
+    end
     noctalia.runAsync(
         "niri msg action spawn -- bash " .. scriptsDir .. "/random-wallpaper.sh",
         function(result)

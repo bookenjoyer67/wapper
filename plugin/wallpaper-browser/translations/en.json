@@ -11,6 +11,7 @@
   },
   "favorites": {
     "empty": "No favorites yet \u2014 hover a tile and hit the star to keep it for good.",
+    "migrated": "Moved {count} favorites into ~/.config/wallpaper/favorites",
     "reload": "Reload the list",
     "title": "Favorites"
   },
@@ -36,6 +37,14 @@
   "search": {
     "placeholder": "Search wallhaven (tag or words) and press Enter"
   },
+  "settings": {
+    "min_res": "Minimum resolution",
+    "nsfw_all": "All",
+    "nsfw_needs_key": "Purity above SFW needs an apikey \u2014 wallhaven returns SFW only",
+    "nsfw_off": "SFW only",
+    "nsfw_sketchy": "Sketchy",
+    "title": "Purity level"
+  },
   "shortcut": {
     "label": "Wallpapers"
   },
@@ -44,9 +53,14 @@
     "apply_failed": "Failed to apply {id}",
     "applying": "Applying {id}\u2026",
     "bad_json": "Unexpected answer from wallhaven",
+    "min_res_save_failed": "Could not save the minimum resolution",
+    "min_res_saved": "Minimum resolution saved: {value}",
     "need_query": "Type a search term first (or pick one in Queries)",
     "network": "Network error (HTTP {status})",
     "resolving": "Looking up {id}\u2026",
+    "save_failed": "Could not save the purity level",
+    "save_unavailable": "Scripts not found \u2014 the change is session-only",
+    "saved": "Purity level saved: {level}",
     "searching": "Searching\u2026"
   },
   "widget": {

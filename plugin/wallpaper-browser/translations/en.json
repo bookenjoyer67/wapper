@@ -1,0 +1,68 @@
+{
+  "button": {
+    "favorites": "Favorites",
+    "history": "History",
+    "queries": "Queries",
+    "search": "Search",
+    "shuffle": "Shuffle"
+  },
+  "empty": {
+    "none": "Type a tag above and press Enter, or open Queries for your saved searches."
+  },
+  "favorites": {
+    "empty": "No favorites yet \u2014 hover a tile and hit the star to keep it for good.",
+    "reload": "Reload the list",
+    "title": "Favorites"
+  },
+  "history": {
+    "empty": "Nothing yet \u2014 wallpapers you apply (here or with the random key) show up here.",
+    "reload": "Reload the list",
+    "title": "Previously applied"
+  },
+  "notify": {
+    "applied_body": "{id} \u00b7 {res} is on your desktop",
+    "applied_title": "Wallpaper applied",
+    "banned_body": "{id} will never show up again (rejected list)",
+    "banned_title": "Wallpaper banned",
+    "failed_title": "Could not apply wallpaper",
+    "open_failed_title": "Could not open the wallpaper source"
+  },
+  "queries": {
+    "add": "Add",
+    "empty": "No saved queries yet \u2014 type one above and press Add.",
+    "placeholder": "Add a wallhaven search term (e.g. neon, vaporwave, fractal)",
+    "title": "Saved queries"
+  },
+  "search": {
+    "placeholder": "Search wallhaven (tag or words) and press Enter"
+  },
+  "shortcut": {
+    "label": "Wallpapers"
+  },
+  "status": {
+    "applied": "Applied {id}",
+    "apply_failed": "Failed to apply {id}",
+    "applying": "Applying {id}\u2026",
+    "bad_json": "Unexpected answer from wallhaven",
+    "need_query": "Type a search term first (or pick one in Queries)",
+    "network": "Network error (HTTP {status})",
+    "resolving": "Looking up {id}\u2026",
+    "searching": "Searching\u2026"
+  },
+  "widget": {
+    "tooltip": "Wallpapers — left click: browse wallhaven, right click: random switch"
+  },
+  "tooltip": {
+    "ban": "Ban this wallpaper id",
+    "close": "Close",
+    "delete": "Remove this saved query",
+    "favorite": "Save to favorites",
+    "favorites": "Wallpapers you starred",
+    "history": "Browse wallpapers you applied before",
+    "queries": "Edit your saved search queries",
+    "shuffle": "Pick a random tag from the wallpaper pool",
+    "source": "Open this wallpaper's page on wallhaven",
+    "unfavorite": "Remove from favorites",
+    "use": "Search this query"
+  }
+}

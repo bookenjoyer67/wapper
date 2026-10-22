@@ -1,0 +1,43 @@
+# Wallpaper Browser - a Noctalia panel to browse wallhaven.cc by hand instead
+# of pulling a random one.
+#
+# It speaks the same API the random fetcher does (wallhaven.cc/api/v1/search,
+# SFW only), but keeps the pool behaviour of fetch-wallpaper.sh out of the way:
+# you get a thumbnail grid, a search box, sorting, paging, and one click to
+# apply. Applying runs the canonical pipeline via apply.sh -> apply-wallpaper.sh
+# (awww + matugen + Noctalia palette + lock backdrops), and updates the same
+# ~/.cache/wallpaper bookkeeping (current.id / recent) the swipe scripts use.
+#
+#   [[panel]]     the browser window
+#   [[shortcut]]  control-center tile that toggles it
+#   [[widget]]    bar button (left = browser, right = random switch)
+#
+# Open with: noctalia msg panel-toggle computing/wallpaper-browser:browser
+# On the bar as: computing/wallpaper-browser:button
+id = "computing/wallpaper-browser"
+name = "Wallpaper Browser"
+version = "1.1.0"
+plugin_api = 30
+author = "computing"
+license = "MIT"
+icon = "photo"
+description = "Browse wallhaven.cc thumbnails and apply one by hand, instead of fetching a random wallpaper."
+tags = ["wallpaper", "desktop", "theming"]
+dependencies = ["curl", "bash", "xdg-open"]
+
+[[panel]]
+id = "browser"
+entry = "panel.luau"
+width = 1180
+height = 780
+placement = "floating"
+position = "center"
+layer = "overlay"
+
+[[shortcut]]
+id = "open"
+entry = "shortcut.luau"
+
+[[widget]]
+id = "button"
+entry = "button.luau"

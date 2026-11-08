@@ -21,6 +21,7 @@ touches the compositor-facing tools, so the rest works anywhere bash does.
 
     plugin/wallpaper-browser/         Noctalia v5 plugin: panel + bar button
     pool.txt                          default search queries, one per line
+    wallfx/                           the character-draw transition (see below)
 
 One image is cached at a time in `~/.cache/wallpaper/`, along with
 `current.id`, `recent`, `rejected` and `history` — the panel and the swipe
@@ -30,8 +31,10 @@ favourites live in `~/.config/wallpaper/`.
 ## Requirements
 
 `bash curl jq` for fetching, `awww` to paint, `matugen` for the palette,
-`noctalia` v5 for the panel, ImageMagick (`magick`) for the saturation check.
-`xdg-open` is used by the panel's "open source" button.
+`noctalia` v5 for the panel, ImageMagick (`magick`) for the saturation check and
+the transition's image decoding. `xdg-open` is used by the panel's "open source"
+button. Building `wallfx-gpu` needs `make cc wayland-egl egl glesv2` headers;
+the cut-out needs `uv` once per machine (`wallfx instalar`, ~1 GB).
 
 ## Deploy
 
@@ -68,6 +71,35 @@ Bind the scripts in your compositor, e.g. for niri:
 
 The panel opens from the bar button or
 `noctalia msg panel-toggle computing/wallpaper-browser:browser`.
+
+## The transition: the character draws itself
+
+The wallpaper change is not one of awww's fades. A model cuts the character out
+of the NEW wallpaper once (BiRefNet through rembg, cached in `~/.cache/wallfx`),
+and `wallfx-gpu` — a small C/EGL `wlr-layer-shell` surface on the Bottom layer,
+above awww and below the windows — draws the change:
+
+1. a thin quiet line draws the character's outline, two pens from the top;
+2. the character fills in from that outline;
+3. the rest of the world spreads out of it in crisp 4 px cells;
+4. awww is switched underneath while the animation covers the screen, and the
+   surface fades out.
+
+A wallpaper with no clear character gets a plain awww fade, and so does
+anything when the renderer or the maps are missing: the wallpaper must change
+even if the effect cannot play. `~/.config/wallfx/sin-perfil` lists wallpapers
+that must never get the outline (one file name per line) — the model finds a
+"subject" in almost any picture, and outlining a bridge reads as a mistake.
+
+Cutting a character out costs ~13 s on the CPU here (OpenVINO on the Intel GPU
+is tried first; if it fails, `~/.cache/wallfx/ov-off` remembers it so later
+runs skip that attempt). Cached wallpapers are instant, and the wait is visible:
+a notification from the keybind path, and the "preparing — cutting out its
+character" status line in the browser.
+
+Sources live in `wallfx/.local/bin/wallfx` (Python) and
+`wallfx/.local/src/wallfx-gpu` (C). `wallfx instalar` sets up the venv + model
+once per machine (~1 GB); `wallfx warm` cuts out what is already cached.
 
 ## Settings
 

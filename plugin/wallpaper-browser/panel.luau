@@ -1,19 +1,10 @@
 --!nonstrict
--- Wallpaper Browser: browse wallhaven.cc thumbnails and apply one by hand.
---
--- Same source as scripts/fetch-wallpaper.sh (wallhaven API v1,
--- SFW only), but you pick. Applying runs apply.sh, which updates the same
--- ~/.cache/wallpaper cache/current.id/recent bookkeeping and then calls
--- apply-wallpaper.sh (awww + matugen + Noctalia palette + lock backdrops).
 
 local UA = "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36"
 local SITE = "https://wallhaven.cc/api/v1/search"
 
 local TILE_W, TILE_H, COLS, GAP = 276, 155, 4, 14
 local GRID_H = 596
-
--- Queries are read from the shared query list: the pool file, or
--- ~/.config/wallpaper/sets/<set>.txt when `set` is configured.
 
 local SORTS = { "random", "toplist", "date_added", "relevance" }
 local SORT_LABELS = { random = "Random", toplist = "Top rated", date_added = "Newest", relevance = "Relevance" }
@@ -23,6 +14,7 @@ local MIN_LABELS = { any = "Any size", ["1920x1080"] = "1080p+", ["2560x1440"] =
 local pluginDir = noctalia.pluginDir()
 local dataDir = noctalia.pluginDataDir() or "/tmp/noctalia-wallpaper-browser"
 local thumbDir = dataDir .. "/thumbs"
+
 local cacheDir = (noctalia.expandPath("~/.cache/wallpaper") or "") .. ""
 
 noctalia.mkdirAll(thumbDir)
@@ -42,8 +34,6 @@ local function expandPath(p)
     return p
 end
 
--- Settings: ~/.config/wallpaper/settings, the same file, grammar and
--- precedence as scripts/read-settings.sh (env > file > default).
 local WALLPAPER_DIR = expandPath("~/.config/wallpaper")
 local SETS_DIR = WALLPAPER_DIR .. "/sets"
 local FAV_FILE = WALLPAPER_DIR .. "/favorites"
@@ -124,8 +114,6 @@ local function readSettings()
     return s
 end
 
--- `set = <name>` swaps the pool for ~/.config/wallpaper/sets/<name>.txt, which
--- is the same rule scripts/fetch-wallpaper.sh applies.
 local function effectiveListFile(settings)
     local s = settings or readSettings()
     if s.set ~= "" then
@@ -134,7 +122,6 @@ local function effectiveListFile(settings)
     return s.pool
 end
 
--- The fetcher's "TERM * N" syntax, parsed the same way.
 local function parseQueryLine(line)
     local t = trim(line)
     local term, weight = t:match("^(.-)%s+%*%s*(%d+)$")
@@ -154,9 +141,6 @@ local function parseQueryLine(line)
     return term, weight
 end
 
--- The query list is the pool file, or the named set. Reads hand back the raw
--- lines, comments and blanks included, because the editor rewrites the file:
--- only the term line it adds or removes may change.
 local function readListLines()
     local lines = {}
     local file = effectiveListFile()
@@ -170,7 +154,6 @@ local function readListLines()
     if text:sub(-1) ~= "\n" then
         text = text .. "\n"
     end
-    -- "(.-)\n", not "[^\n]+": an empty line is a line the file has.
     for line in text:gmatch("(.-)\n") do
         lines[#lines + 1] = line
     end
@@ -182,7 +165,6 @@ local function isTermLine(line)
     return t ~= "" and t:sub(1, 1) ~= "#"
 end
 
--- Term lines only, trimmed, weights included, so "synthwave * 3" round-trips.
 local function poolQueries()
     local out = {}
     for _, line in ipairs(readListLines()) do
@@ -201,8 +183,6 @@ local function saveListLines(lines)
     noctalia.writeFile(file, table.concat(lines, "\n") .. "\n")
 end
 
--- Mirror of the file for the current render: the term text plus the raw line it
--- came from, so Delete removes that line and leaves every other byte alone.
 local queries = {}
 local queryLines = {}
 
@@ -271,16 +251,12 @@ local busy = false
 local currentId = nil
 local inputGen = 0
 
--- ---------------------------------------------------------------- helpers
-
 local function pct(s)
     return (tostring(s):gsub("[^%w%-%._~]", function(c)
         return string.format("%%%02X", string.byte(c))
     end))
 end
 
--- nsfw -> wallhaven purity. sketchy and all only widen the results when an
--- apikey is set; the status line says so when it is not.
 local function purity(settings)
     if settings.nsfw == "sketchy" then
         return 110
@@ -291,7 +267,6 @@ local function purity(settings)
     return 100
 end
 
--- /search already carries a query string ('&'), /w/<id> does not ('?').
 local function apiKeyFor(settings, kind)
     if settings.apikey == "" then
         return ""
@@ -311,10 +286,6 @@ local function nsfwIndexFrom(level)
     return 1
 end
 
--- `onDragEnd` delivers no value in this Noctalia build (procmon and yt-music
--- both declare it with no parameter and read the state their onChange kept), so
--- an empty/absent value means "keep the position onChange already reported" —
--- never fall back to 1, which is silently "off".
 local function clampNsfw(value)
     local n = tonumber(value)
     if n == nil then
@@ -328,8 +299,6 @@ local function clampNsfw(value)
     return math.floor(n)
 end
 
--- Same weight rule the fetcher applies, so the dice button and a random fetch
--- agree on what "a random pool term" means.
 local function weightedPick(lines)
     local expanded = {}
     for _, line in ipairs(lines) do
@@ -358,8 +327,6 @@ local function knownMinRes(value)
     return false
 end
 
--- Seeded once, at module load: the select persists its choice through
--- set-setting.sh, so re-seeding on every open would discard what was picked.
 do
     local stored = readSettings().min_res
     if knownMinRes(stored) then
@@ -403,9 +370,6 @@ local function ban(id)
     render()
 end
 
--- Open the wallpaper's page on wallhaven (its "source") in the default browser.
--- open-source.sh raises the browser window too: on niri, xdg-open alone appends
--- a tab to the existing instance and leaves it on whatever workspace it was on.
 local function openSource(it)
     if type(it) ~= "table" or type(it.id) ~= "string" or it.id == "" then
         return
@@ -418,18 +382,16 @@ local function openSource(it)
     end)
 end
 
--- ---------------------------------------------------------------- network
-
 local function fetchThumbs(list)
     list = list or items
     local lines = {}
     for _, it in ipairs(list) do
         local thumb = it.thumbs and (it.thumbs.large or it.thumbs.original or it.thumbs.small)
         if thumb == nil and type(it.id) == "string" and it.id:match("^%w%w%w%w+$") then
-            -- history entries carry only the id; wallhaven thumb paths are derived from it
             thumb = "https://th.wallhaven.cc/lg/" .. it.id:sub(1, 2) .. "/" .. it.id .. ".jpg"
         end
-        if thumb and not noctalia.fileExists(thumbDir .. "/" .. it.id .. ".jpg") then
+        local cached = thumbDir .. "/" .. it.id .. ".jpg"
+        if thumb and not noctalia.fileExists(cached) then
             lines[#lines + 1] = it.id .. "\t" .. thumb
         end
     end
@@ -444,10 +406,10 @@ local function fetchThumbs(list)
 end
 
 local function search(q, p, fresh)
+    noctalia.log("WB search q='" .. tostring(q) .. "' view=" .. tostring(view))
     q = trim(q)
     if q == "" then
         status = noctalia.tr("status.need_query")
-        view = "results"
         render()
         return
     end
@@ -501,20 +463,16 @@ local function apply(it)
         return
     end
     busy = true
-    status = noctalia.tr("status.applying", { id = it.id })
+    -- The cut-out of a new wallpaper happens inside this call (~10-15 s on
+    -- the CPU) and there is no progress callback, so say what the wait is.
+    status = noctalia.tr("status.preparing", { id = it.id })
     render()
-    -- 60000 is the API's clamp maximum. Without it the call used the default
-    -- (a few seconds) and a normal wallhaven download + palette regeneration blew
-    -- through it: the process was killed after awww painted but before matugen
-    -- ran, which surfaced as "Could not apply wallpaper" with an empty stderr,
-    -- a wallpaper that WAS applied, and a theme that never changed.
     noctalia.runAsync({ "bash", pluginDir .. "/apply.sh", it.id, it.path }, function(res)
         busy = false
         if res ~= nil and res.exitCode == 0 then
             currentId = it.id
             status = noctalia.tr("status.applied", { id = it.id })
             if view == "history" then
-                -- apply.sh appended the id; re-read so it lands at the top
                 local refreshed = loadHistory and loadHistory() or nil
                 if refreshed ~= nil and #refreshed > 0 then
                     historyItems = refreshed
@@ -539,8 +497,6 @@ local function apply(it)
     end, 60000)
 end
 
--- Where the scripts live: $WALLPAPER_SCRIPTS, then the two real deploy dirs.
--- ~/.local/bin is only a fallback: the scripts deploy to the niri dir.
 local function resolveScriptsDir(name)
     local env = noctalia.getenv and noctalia.getenv("WALLPAPER_SCRIPTS") or nil
     if type(env) == "string" and trim(env) ~= "" then
@@ -555,9 +511,6 @@ local function resolveScriptsDir(name)
     return ""
 end
 
--- The slider writes through bash, not through writeFile: set-setting.sh edits
--- the one line and keeps the commented template (writeFile would replace the
--- whole file), and there is exactly one implementation of the grammar.
 persistNsfw = function(level)
     local dir = resolveScriptsDir("set-setting.sh")
     if dir == "" then
@@ -571,8 +524,6 @@ persistNsfw = function(level)
             cfg = readSettings()
             nsfwIdx = nsfwIndexFrom(cfg.nsfw)
             status = noctalia.tr("status.saved", { level = level })
-            -- reload the grid at the new purity: without this the visible results
-            -- stay at the old level until the query or sort is touched again
             search(query, 1, true)
             status = noctalia.tr("status.saved", { level = level })
         else
@@ -583,8 +534,6 @@ persistNsfw = function(level)
     end, 15000)
 end
 
--- The resolution select persists through the same writer, and re-reads what
--- landed in the file, so the choice survives a restart and not just the panel.
 local function persistMinRes(value)
     local dir = resolveScriptsDir("set-setting.sh")
     if dir == "" then
@@ -608,10 +557,6 @@ local function persistMinRes(value)
     end, 15000)
 end
 
--- ---------------------------------------------------------------- ui
-
--- History tiles carry only an id (the cache keeps one image), so resolve the
--- full image url from the API before applying.
 local function pick(it)
     if type(it.path) == "string" and it.path ~= "" then
         apply(it)
@@ -646,22 +591,26 @@ local function pick(it)
     end)
 end
 
--- Previous wallpapers: ~/.cache/wallpaper/history (append-only, "id<TAB>epoch",
--- capped at 1000 by the writers). Falls back to the 30-entry `recent` ring the
--- first time, so an existing setup still shows something.
 local function readIds(path, withStamp)
+    -- One pattern pass over the whole file: a per-line trim() here costs
+    -- hundreds of ms on a 900-line history and blows the callback CPU budget
+    -- before the grid renders.
     local ids = {}
     local ok, text = pcall(noctalia.readFile, path)
-    if ok and type(text) == "string" then
-        for line in text:gmatch("[^\n]+") do
-            local raw = trim(line)
-            local id, stamp = raw, nil
-            if withStamp then
-                id, stamp = raw:match("^(%S+)%s*(%S*)$")
+    if not ok or type(text) ~= "string" then
+        return ids
+    end
+    local PAT = "(%w+)%s*([^\r\n]*)"
+    if withStamp then
+        for id, stamp in text:gmatch(PAT) do
+            if #id >= 4 then
+                ids[#ids + 1] = { id = id, stamp = tonumber(stamp) }
             end
-            id = trim(id or "")
-            if id:match("^%w%w%w%w+$") then
-                ids[#ids + 1] = { id = id, stamp = tonumber(stamp or "") }
+        end
+    else
+        for id in text:gmatch("%w+") do
+            if #id >= 4 then
+                ids[#ids + 1] = { id = id, stamp = 0 }
             end
         end
     end
@@ -671,7 +620,6 @@ end
 loadHistory = function()
     local ids = readIds(cacheDir .. "/history", true)
     if #ids == 0 then
-        -- first run: seed from the ring buffer so the view isn't empty
         local recent = readIds(cacheDir .. "/recent", false)
         if #recent > 0 then
             local lines = {}
@@ -683,7 +631,6 @@ loadHistory = function()
         end
     end
 
-    -- newest first, and one entry per id (re-applying moves it to the top)
     local list = {}
     local seen = {}
     for i = #ids, 1, -1 do
@@ -696,9 +643,6 @@ loadHistory = function()
     return list
 end
 
--- Favourites: wallhaven ids, one per line, in the same file the random fetcher
--- reads (~/.config/wallpaper/favorites). Only the id is stored — path and
--- resolution are resolved through /w/<id> when a tile is applied.
 local function favoritesPath()
     local s = readSettings()
     if s.favorites ~= "" then
@@ -720,8 +664,6 @@ local function saveFavorites()
     noctalia.writeFile(path, table.concat(lines, "\n") .. (#lines > 0 and "\n" or ""))
 end
 
--- The old list lived in the plugin data dir as "id<TAB>path<TAB>resolution".
--- Move the ids into the shared file once, then it is the only list.
 local function migrateLegacyFavorites(path)
     if path == "" or path == LEGACY_FAV then
         return
@@ -842,6 +784,17 @@ local function tile(it)
             end,
         }),
         ui.button({
+            key = "peek-" .. it.id,
+            glyph = "zoom-in",
+            glyphSize = 12,
+            variant = "ghost",
+            controlSize = "sm",
+            tooltip = noctalia.tr("tooltip.preview"),
+            onClick = function()
+                noctalia.runAsync({ "noctalia", "msg", "panel-open", "computing/wallpaper-browser:preview", it.id })
+            end,
+        }),
+        ui.button({
             glyph = "star",
             glyphSize = 12,
             variant = isFav and "primary" or "ghost",
@@ -895,8 +848,6 @@ local function selectOptions(list)
     return out
 end
 
--- The status slot doubles as the honesty hint: nsfw above off returns only SFW
--- results until an apikey is set, and the panel must not imply otherwise.
 local function statusText()
     if status ~= nil then
         return status
@@ -906,6 +857,25 @@ local function statusText()
         return noctalia.tr("settings.nsfw_needs_key")
     end
     return string.format("%d images · %s", total, query)
+end
+
+local PAGE_SIZE = COLS * 6
+local historyPage = 1
+local favoritesPage = 1
+
+local function pageSlice(list, page)
+    local pages = math.max(1, math.ceil(#list / PAGE_SIZE))
+    if page > pages then
+        page = pages
+    elseif page < 1 then
+        page = 1
+    end
+    local out = {}
+    local first = (page - 1) * PAGE_SIZE + 1
+    for i = first, math.min(first + PAGE_SIZE - 1, #list) do
+        out[#out + 1] = list[i]
+    end
+    return out, page, pages
 end
 
 local function header()
@@ -1019,7 +989,6 @@ local function header()
                 render()
             end,
             onDragEnd = function()
-                -- no value here (see clampNsfw): persist the position onChange set
                 persistNsfw(NSFW_LEVELS[nsfwIdx or 1])
             end,
         }),
@@ -1055,6 +1024,7 @@ local function header()
             controlSize = "sm",
             tooltip = noctalia.tr("tooltip.queries"),
             onClick = function()
+                noctalia.log("WB toggle queries was=" .. tostring(view))
                 view = view == "queries" and "results" or "queries"
                 render()
             end,
@@ -1071,10 +1041,12 @@ local function header()
                     render()
                     return
                 end
+                noctalia.log("WB toggle history was=" .. tostring(view))
                 view = "history"
+                historyPage = 1
                 historyItems = loadHistory()
                 render()
-                fetchThumbs(historyItems)
+                fetchThumbs(pageSlice(historyItems, historyPage))
             end,
         }),
         ui.button({
@@ -1089,10 +1061,12 @@ local function header()
                     render()
                     return
                 end
+                noctalia.log("WB toggle favorites was=" .. tostring(view))
                 view = "favorites"
+                favoritesPage = 1
                 loadFavorites()
                 render()
-                fetchThumbs(favorites)
+                fetchThumbs(pageSlice(favorites, favoritesPage))
             end,
         }),
         ui.separator({ orientation = "vertical", spacing = 4 }),
@@ -1183,13 +1157,15 @@ local function queriesPanel()
 end
 
 local function historyPanel()
+    local slice, page, pages = pageSlice(historyItems, historyPage)
+    historyPage = page
     local body
     if #historyItems == 0 then
         body = ui.column({ gap = 8, align = "center" }, {
             ui.label({ text = noctalia.tr("history.empty"), color = "on_surface_variant", fontSize = 13 }),
         })
     else
-        body = ui.scroll({ flexGrow = 1, gap = 12 }, { grid(historyItems) })
+        body = ui.scroll({ flexGrow = 1, gap = 12 }, { grid(slice) })
     end
     return ui.column({ gap = 10, flexGrow = 1, align = "stretch" }, {
         ui.row({ gap = 8, align = "center" }, {
@@ -1202,14 +1178,36 @@ local function historyPanel()
             }),
             ui.label({ text = string.format("%d", #historyItems), fontSize = 12, color = "on_surface_variant" }),
             ui.button({
+                glyph = "chevron-left",
+                controlSize = "sm",
+                variant = "ghost",
+                enabled = page > 1,
+                onClick = function()
+                    historyPage = page - 1
+                    render()
+                end,
+            }),
+            ui.label({ text = string.format("%d / %d", page, pages), fontSize = 12, color = "on_surface_variant" }),
+            ui.button({
+                glyph = "chevron-right",
+                controlSize = "sm",
+                variant = "ghost",
+                enabled = page < pages,
+                onClick = function()
+                    historyPage = page + 1
+                    render()
+                end,
+            }),
+            ui.button({
                 glyph = "refresh",
                 controlSize = "sm",
                 variant = "ghost",
                 tooltip = noctalia.tr("history.reload"),
                 onClick = function()
                     historyItems = loadHistory()
+                    local visible = pageSlice(historyItems, historyPage)
                     render()
-                    fetchThumbs(historyItems)
+                    fetchThumbs(visible)
                 end,
             }),
         }),
@@ -1218,13 +1216,15 @@ local function historyPanel()
 end
 
 local function favoritesPanel()
+    local slice, page, pages = pageSlice(favorites, favoritesPage)
+    favoritesPage = page
     local body
     if #favorites == 0 then
         body = ui.column({ gap = 8, align = "center" }, {
             ui.label({ text = noctalia.tr("favorites.empty"), color = "on_surface_variant", fontSize = 13 }),
         })
     else
-        body = ui.scroll({ flexGrow = 1, gap = 12 }, { grid(favorites) })
+        body = ui.scroll({ flexGrow = 1, gap = 12 }, { grid(slice) })
     end
     return ui.column({ gap = 10, flexGrow = 1, align = "stretch" }, {
         ui.row({ gap = 8, align = "center" }, {
@@ -1237,14 +1237,36 @@ local function favoritesPanel()
             }),
             ui.label({ text = string.format("%d", #favorites), fontSize = 12, color = "on_surface_variant" }),
             ui.button({
+                glyph = "chevron-left",
+                controlSize = "sm",
+                variant = "ghost",
+                enabled = page > 1,
+                onClick = function()
+                    favoritesPage = page - 1
+                    render()
+                end,
+            }),
+            ui.label({ text = string.format("%d / %d", page, pages), fontSize = 12, color = "on_surface_variant" }),
+            ui.button({
+                glyph = "chevron-right",
+                controlSize = "sm",
+                variant = "ghost",
+                enabled = page < pages,
+                onClick = function()
+                    favoritesPage = page + 1
+                    render()
+                end,
+            }),
+            ui.button({
                 glyph = "refresh",
                 controlSize = "sm",
                 variant = "ghost",
                 tooltip = noctalia.tr("favorites.reload"),
                 onClick = function()
                     loadFavorites()
+                    local visible = pageSlice(favorites, favoritesPage)
                     render()
-                    fetchThumbs(favorites)
+                    fetchThumbs(visible)
                 end,
             }),
         }),
@@ -1253,6 +1275,7 @@ local function favoritesPanel()
 end
 
 function render()
+    noctalia.log("WB render view=" .. tostring(view) .. " items=" .. tostring(#items) .. " hist=" .. tostring(#historyItems))
     cfg = readSettings()
     loadQueryRows()
     local body
@@ -1268,8 +1291,6 @@ function render()
     panel.render(ui.column({ flexGrow = 1, gap = 12, padding = 16, align = "stretch" }, { header(), body }))
 end
 
--- ---------------------------------------------------------------- lifecycle
-
 function onOpen()
     currentId = readCurrentId()
     cfg = readSettings()
@@ -1277,13 +1298,13 @@ function onOpen()
     if view == "history" then
         historyItems = loadHistory()
         render()
-        fetchThumbs(historyItems)
+        fetchThumbs(pageSlice(historyItems, historyPage))
         return
     end
     if view == "favorites" then
         loadFavorites()
         render()
-        fetchThumbs(favorites)
+        fetchThumbs(pageSlice(favorites, favoritesPage))
         return
     end
     render()

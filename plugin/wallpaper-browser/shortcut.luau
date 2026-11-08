@@ -1,5 +1,4 @@
 --!nonstrict
--- Control-center tile: open/close the wallpaper browser.
 local function paint()
     if shortcut == nil then
         return

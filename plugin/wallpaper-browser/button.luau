@@ -1,14 +1,4 @@
 --!nonstrict
--- Bar button: open the custom Wallpaper Browser panel.
---
--- Left click  : toggle the wallhaven browser panel
---               (computing/wallpaper-browser:browser)
--- Right click : one random switch, through the canonical funnel
---               (<WALLPAPER_SCRIPTS>/random-wallpaper.sh -> apply-wallpaper.sh),
---               launched via niri so it gets the session env.
---
--- The scripts live in $WALLPAPER_SCRIPTS, else the niri config dir that
--- config.kdl actually spawns, else ~/.local/bin (legacy).
 
 local PANEL_ID = "computing/wallpaper-browser:browser"
 local GLYPH = "photo"

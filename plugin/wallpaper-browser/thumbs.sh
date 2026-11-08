@@ -1,7 +1,4 @@
 #!/usr/bin/env bash
-# Pull wallhaven thumbnails for one result page.
-# Usage: thumbs.sh <thumb-dir> <list-file>   (list lines: "id<TAB>url")
-# Skips ids already cached; six in flight at a time.
 set -uo pipefail
 
 DIR="${1:-}"

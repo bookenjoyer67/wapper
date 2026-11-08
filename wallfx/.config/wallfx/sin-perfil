@@ -1,0 +1,9 @@
+# Wallpapers that never get the character-draw transition, even when the model
+# finds a subject in them: one FILE NAME per line (basename, not a path).
+#
+# The model finds SOMETHING in almost any picture - a bridge, a building, a
+# patch of field - and outlining that reads as a mistake, not as a character.
+# A listed wallpaper is applied with the plain awww fade instead.
+#
+# Example:
+#   art-a-sunset-after-a-storm.jpg

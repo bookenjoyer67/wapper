@@ -20,6 +20,14 @@
     "reload": "Reload the list",
     "title": "Previously applied"
   },
+  "preview": {
+    "bad_json": "Unexpected answer from wallhaven",
+    "download_failed": "Could not download the full image",
+    "error": "Could not load this wallpaper (HTTP {status})",
+    "loading": "Loading the full image\u2026",
+    "no_id": "Nothing to preview yet",
+    "title": "Preview"
+  },
   "notify": {
     "applied_body": "{id} \u00b7 {res} is on your desktop",
     "applied_title": "Wallpaper applied",
@@ -52,6 +60,7 @@
     "applied": "Applied {id}",
     "apply_failed": "Failed to apply {id}",
     "applying": "Applying {id}\u2026",
+    "preparing": "Preparing {id} \u2014 cutting out its character if the wallpaper is new (a few seconds)\u2026",
     "bad_json": "Unexpected answer from wallhaven",
     "min_res_save_failed": "Could not save the minimum resolution",
     "min_res_saved": "Minimum resolution saved: {value}",
@@ -73,6 +82,7 @@
     "favorite": "Save to favorites",
     "favorites": "Wallpapers you starred",
     "history": "Browse wallpapers you applied before",
+    "preview": "Open this wallpaper full-size in a floating window",
     "queries": "Edit your saved search queries",
     "shuffle": "Pick a random tag from the wallpaper pool",
     "source": "Open this wallpaper's page on wallhaven",
